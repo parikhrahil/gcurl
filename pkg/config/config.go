@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+type AuditMetrics struct {
+	BytesTransmitted       int64
+	BytesReceived          int64
+	DNSLookupDuration      time.Duration
+	TCPHandshakeDuration   time.Duration
+	TLSTerminationDuration time.Duration
+	TotalDuration          time.Duration
+}
+
 // RequestConfiguration defines the immutable domain model for a network request.
 type RequestConfiguration struct {
 	Method         string
@@ -15,6 +24,7 @@ type RequestConfiguration struct {
 	MaxTimeout     time.Duration
 	Insecure       bool
 	Verbose        bool
+	Metrics        AuditMetrics
 }
 
 func NewDefaultConfig() *RequestConfiguration {
