@@ -94,7 +94,7 @@ func (r *HistoryRepository) WriteAuditTrail(cfg *config.RequestConfiguration) er
 	query := `
 		INSERT INTO gcurl_history_ledger(
 			http_method, target_url, status_code, bytes_transmitted, bytes_received, total_duration_us
-		) VALUES (?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?)
 	`
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
