@@ -25,6 +25,8 @@ type RequestConfiguration struct {
 	Insecure       bool
 	Verbose        bool
 	Metrics        AuditMetrics
+	Concurrency    int
+	TotalRequests  int
 }
 
 func NewDefaultConfig() *RequestConfiguration {
@@ -35,5 +37,7 @@ func NewDefaultConfig() *RequestConfiguration {
 		MaxTimeout:     30 * time.Second,
 		Insecure:       false,
 		Verbose:        false,
+		Concurrency:    1,
+		TotalRequests:  1,
 	}
 }

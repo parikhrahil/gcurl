@@ -2,11 +2,13 @@ module github.com/parikhrahil/gcurl
 
 go 1.26.3
 
-require github.com/spf13/cobra v1.10.2
+require (
+	github.com/glebarez/go-sqlite v1.22.0
+	github.com/spf13/cobra v1.10.2
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

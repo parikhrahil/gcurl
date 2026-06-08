@@ -15,6 +15,7 @@ import (
 
 	"github.com/parikhrahil/gcurl/pkg/audit"
 	"github.com/parikhrahil/gcurl/pkg/config"
+	"github.com/parikhrahil/gcurl/pkg/report"
 	"github.com/parikhrahil/gcurl/pkg/transport"
 	"github.com/spf13/cobra"
 )
@@ -63,6 +64,10 @@ func NewRootCommand() *cobra.Command {
 				cfg.Headers.Add(strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]))
 			}
 
+			if cfg.Concurrency > cfg.TotalRequests {
+				cfg.Concurrency = cfg.TotalRequests // prevent over provisioning of resources
+			}
+
 			return ExecuteRequest(cfg)
 		},
 	}
@@ -77,6 +82,10 @@ func NewRootCommand() *cobra.Command {
 		"Allow insecure server connections when using SSL/TLS")
 	rootCmd.Flags().BoolVarP(&verboseMode, "verbose", "v", false,
 		"Make the operation talkative (expose connection trace details)")
+	rootCmd.Flags().IntVarP(&cfg.Concurrency, "concurrency", "c", 1,
+		"Number of concurrent worker goroutines")
+	rootCmd.Flags().IntVarP(&cfg.TotalRequests, "requests", "n", 1,
+		"Total number of HTTP requests to execute")
 
 	// Sub commands
 	rootCmd.AddCommand(NewVersionCommand())
@@ -85,6 +94,36 @@ func NewRootCommand() *cobra.Command {
 }
 
 func ExecuteRequest(cfg *config.RequestConfiguration) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if cfg.TotalRequests > 1 || cfg.Concurrency > 1 {
+		if cfg.Verbose {
+			fmt.Fprintf(os.Stderr, "* Shifting into Benchmarking Mode."+
+				"Worker count: %d. Total target load: %d\n", cfg.Concurrency, cfg.TotalRequests)
+		}
+
+		engine := transport.NewParallelEngine(cfg)
+
+		wallclockStart := time.Now()
+		results, globalMetrics := engine.Execute(ctx)
+		totalWallclockTime := time.Since(wallclockStart)
+
+		cfg.Metrics.BytesTransmitted = globalMetrics.BytesTransmitted
+		cfg.Metrics.BytesReceived = globalMetrics.BytesReceived
+		cfg.Metrics.TotalDuration = totalWallclockTime
+
+		wsMgr, err := audit.BootstrapWorkspace()
+		if err == nil && !wsMgr.Disabled {
+			if repo, dbErr := audit.NewHistoryRepository(wsMgr.DbPath); dbErr == nil {
+				_ = repo.WriteAuditTrail(cfg) // Execution failure safely guarded internally
+				repo.Close()
+			}
+		}
+		report.RenderSummary(results, totalWallclockTime, globalMetrics)
+		return nil
+	}
+
 	var repo *audit.HistoryRepository
 	dbEnabled := false
 
@@ -99,9 +138,6 @@ func ExecuteRequest(cfg *config.RequestConfiguration) error {
 			fmt.Fprintf(os.Stderr, "* Telemetry warning: storage initialization bypassed: %v\n", dbErr)
 		}
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	var bodyReader io.Reader
 	if cfg.Data != "" {
