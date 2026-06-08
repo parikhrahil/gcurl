@@ -84,5 +84,5 @@ func RenderSummary(
 		}
 		fmt.Printf("  [HTTP %03d (%s)]: %d requests\n", code, statusLabel, freq)
 	}
-	fmt.Println("=====================================================================\n")
+	fmt.Println("=====================================================================")
 }

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"text/tabwriter"
 	"time"
 
@@ -18,6 +17,7 @@ func NewHistoryCommand() *cobra.Command {
 		Short: "Display historical audit trails and transport metrics captured by gcurl",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
 			wsMgr, err := audit.BootstrapWorkspace()
 			if err != nil || wsMgr.Disabled {
 				return fmt.Errorf("unable to access historical workspace path: %v", err)
@@ -39,7 +39,7 @@ func NewHistoryCommand() *cobra.Command {
 				return nil
 			}
 
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 3, ' ', 0)
 			fmt.Fprintln(w, "ID\tMETHOD\tTARGET URL\tSTATUS\tSENT\tRCVD\tLATENCY\tEXECUTED (UTC)")
 			fmt.Fprintln(w, "--\t------\t----------\t------\t----\t----\t------\t--------------")
 

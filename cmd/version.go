@@ -2,26 +2,19 @@ package cmd
 
 import (
 	"fmt"
-	"runtime/debug"
 
+	"github.com/parikhrahil/gcurl/pkg/version"
 	"github.com/spf13/cobra"
 )
 
 func NewVersionCommand() *cobra.Command {
-	versionCmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "version",
-		Short: "Print the version of gcurl",
+		Short: "Print extended system telemetry and compilation version information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(resolveVersion())
+			cmd.SilenceUsage = true
+			info := version.GetInfo()
+			fmt.Fprintln(cmd.OutOrStdout(), info.String())
 		},
 	}
-	return versionCmd
-}
-
-func resolveVersion() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok || info.Main.Version == "(devel)" {
-		return "unknown (built from source)"
-	}
-	return info.Main.Version
 }

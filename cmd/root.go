@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -65,10 +64,11 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			if cfg.Concurrency > cfg.TotalRequests {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Auto-adjusting concurrency pool to %d", cfg.TotalRequests)
 				cfg.Concurrency = cfg.TotalRequests // prevent over provisioning of resources
 			}
 
-			return ExecuteRequest(cfg)
+			return ExecuteRequest(cmd, cfg)
 		},
 	}
 
@@ -94,13 +94,13 @@ func NewRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-func ExecuteRequest(cfg *config.RequestConfiguration) error {
+func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	if cfg.TotalRequests > 1 || cfg.Concurrency > 1 {
 		if cfg.Verbose {
-			fmt.Fprintf(os.Stderr, "* Shifting into Benchmarking Mode."+
+			fmt.Fprintf(cmd.ErrOrStderr(), "* Shifting into Benchmarking Mode."+
 				"Worker count: %d. Total target load: %d\n", cfg.Concurrency, cfg.TotalRequests)
 		}
 
@@ -136,7 +136,7 @@ func ExecuteRequest(cfg *config.RequestConfiguration) error {
 			dbEnabled = true
 			defer repo.Close()
 		} else if cfg.Verbose {
-			fmt.Fprintf(os.Stderr, "* Telemetry warning: storage initialization bypassed: %v\n", dbErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "* Telemetry warning: storage initialization bypassed: %v\n", dbErr)
 		}
 	}
 
@@ -167,14 +167,14 @@ func ExecuteRequest(cfg *config.RequestConfiguration) error {
 	defer res.Body.Close()
 
 	if cfg.Verbose {
-		fmt.Fprintf(os.Stderr, "* Connection established. Status Protocol: %s\n", res.Proto)
+		fmt.Fprintf(cmd.ErrOrStderr(), "* Connection established. Status Protocol: %s\n", res.Proto)
 		for k, v := range res.Header {
-			fmt.Fprintf(os.Stderr, "< %s: %s\n", k, strings.Join(v, ", "))
+			fmt.Fprintf(cmd.ErrOrStderr(), "< %s: %s\n", k, strings.Join(v, ", "))
 		}
 	}
 
 	trackedRespBody := audit.NewAuditReader(res.Body, &cfg.Metrics.BytesReceived)
-	_, err = io.Copy(os.Stdout, trackedRespBody)
+	_, err = io.Copy(cmd.OutOrStdout(), trackedRespBody)
 	if err != nil {
 		return fmt.Errorf("failed to flush streaming response network buffer: %w", err)
 	}
@@ -183,7 +183,7 @@ func ExecuteRequest(cfg *config.RequestConfiguration) error {
 	if dbEnabled && repo != nil {
 		writeErr := repo.WriteAuditTrail(cfg)
 		if writeErr != nil && cfg.Verbose {
-			fmt.Fprintf(os.Stderr, "* Telemetry warning: audit write failure: %v\n", writeErr)
+			fmt.Fprintf(cmd.ErrOrStderr(), "* Telemetry warning: audit write failure: %v\n", writeErr)
 		}
 	}
 	return nil
