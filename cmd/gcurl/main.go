@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/parikhrahil/gcurl/cmd"
+)
 
 func main() {
-	fmt.Println("Welcome to gcURL!")
+	if err := cmd.NewRootCommand().Execute(); err != nil {
+		os.Exit(1)
+	}
 }
