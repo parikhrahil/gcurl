@@ -1,11 +1,13 @@
-/*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
-*/
 package main
 
-import "github.com/parikhrahil/gcurl/cmd"
+import (
+	"os"
+
+	"github.com/parikhrahil/gcurl/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.NewRootCommand().Execute(); err != nil {
+		os.Exit(1)
+	}
 }
