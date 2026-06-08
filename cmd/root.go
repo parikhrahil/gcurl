@@ -89,6 +89,7 @@ func NewRootCommand() *cobra.Command {
 
 	// Sub commands
 	rootCmd.AddCommand(NewVersionCommand())
+	rootCmd.AddCommand(NewHistoryCommand())
 
 	return rootCmd
 }
