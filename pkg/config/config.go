@@ -27,6 +27,8 @@ type RequestConfiguration struct {
 	Metrics        AuditMetrics
 	Concurrency    int
 	TotalRequests  int
+	CACertPath     string
+	TLSMinVer      string
 }
 
 func NewDefaultConfig() *RequestConfiguration {

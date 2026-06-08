@@ -24,11 +24,15 @@ type ParallelEngine struct {
 	client *http.Client
 }
 
-func NewParallelEngine(cfg *config.RequestConfiguration) *ParallelEngine {
+func NewParallelEngine(cfg *config.RequestConfiguration) (*ParallelEngine, error) {
+	client, err := NewHTTPClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 	return &ParallelEngine{
 		cfg:    cfg,
-		client: NewHTTPClient(cfg),
-	}
+		client: client,
+	}, nil
 }
 
 func (p *ParallelEngine) Execute(ctx context.Context) ([]ExecutionResult, config.AuditMetrics) {

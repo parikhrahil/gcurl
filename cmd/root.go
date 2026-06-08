@@ -83,6 +83,10 @@ func NewRootCommand() *cobra.Command {
 		"Number of concurrent worker goroutines")
 	rootCmd.Flags().IntVarP(&cfg.TotalRequests, "requests", "n", 1,
 		"Total number of HTTP requests to execute")
+	rootCmd.Flags().StringVar(&cfg.CACertPath, "cacert", "",
+		"Path to a custom CA certificate bundle file (PEM format)")
+	rootCmd.Flags().StringVar(&cfg.TLSMinVer, "tls-min", "1.2",
+		"Enforce minimum TLS protocol version constraints (1.2, 1.3)")
 
 	// Sub commands
 	rootCmd.AddCommand(NewVersionCommand())
@@ -101,7 +105,10 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 				"Worker count: %d. Total target load: %d\n", cfg.Concurrency, cfg.TotalRequests)
 		}
 
-		engine := transport.NewParallelEngine(cfg)
+		engine, err := transport.NewParallelEngine(cfg)
+		if err != nil {
+			return err
+		}
 
 		wallclockStart := time.Now()
 		results, globalMetrics := engine.Execute(ctx)
@@ -153,7 +160,10 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 		}
 	}
 
-	client := transport.NewHTTPClient(cfg)
+	client, err := transport.NewHTTPClient(cfg)
+	if err != nil {
+		return err
+	}
 
 	startTime := time.Now()
 	res, err := client.Do(req)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/parikhrahil/gcurl/pkg/config"
 	"github.com/parikhrahil/gcurl/pkg/transport"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParallelEngine_Execute_DeterministicDraining(t *testing.T) {
@@ -27,7 +28,8 @@ func TestParallelEngine_Execute_DeterministicDraining(t *testing.T) {
 		TotalRequests: 10,
 	}
 
-	engine := transport.NewParallelEngine(cfg)
+	engine, err := transport.NewParallelEngine(cfg)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
