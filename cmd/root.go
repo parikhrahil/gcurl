@@ -94,6 +94,8 @@ func NewRootCommand() *cobra.Command {
 		"Limit the amount of redirects to follow. Default is 10")
 	rootCmd.Flags().BoolVarP(&cfg.FailFast, "fail", "f", false,
 		"Fail fast with no output on HTTP errors")
+	rootCmd.Flags().BoolVarP(&cfg.Silent, "silent", "s", false,
+		"Silent or quiet mode. Do not show progress meter or error messages")
 
 	// Sub commands
 	rootCmd.AddCommand(NewVersionCommand())
@@ -198,7 +200,16 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 		}
 	}
 
-	trackedRespBody := audit.NewAuditReader(res.Body, &cfg.Metrics.BytesReceived)
+	showProgressBar := !cfg.Silent
+	totalExpectedBytes := res.ContentLength
+
+	trackedRespBody := audit.NewProgressReader(
+		res.Body,
+		&cfg.Metrics.BytesReceived,
+		totalExpectedBytes,
+		cmd.ErrOrStderr(),
+		showProgressBar,
+	)
 	_, err = io.Copy(cmd.OutOrStdout(), trackedRespBody)
 	if err != nil {
 		return fmt.Errorf("failed to flush streaming response network buffer: %w", err)

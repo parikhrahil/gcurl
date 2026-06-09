@@ -32,6 +32,7 @@ type RequestConfiguration struct {
 	FollowRedirects bool
 	MaxRedirects    int
 	FailFast        bool
+	Silent          bool
 }
 
 func NewDefaultConfig() *RequestConfiguration {
