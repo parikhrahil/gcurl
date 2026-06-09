@@ -215,6 +215,7 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 		return fmt.Errorf("failed to flush streaming response network buffer: %w", err)
 	}
 
+	cfg.StatusCode = res.StatusCode
 	cfg.Metrics.TotalDuration = time.Since(startTime)
 	if dbEnabled && repo != nil {
 		writeErr := repo.WriteAuditTrail(cfg)

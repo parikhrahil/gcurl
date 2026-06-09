@@ -18,6 +18,7 @@ type AuditMetrics struct {
 type RequestConfiguration struct {
 	Method          string
 	URL             string
+	StatusCode      int
 	Headers         http.Header
 	Data            string
 	ConnectTimeout  time.Duration
