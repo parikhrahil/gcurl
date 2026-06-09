@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"strings"
 	"time"
 
@@ -87,6 +88,12 @@ func NewRootCommand() *cobra.Command {
 		"Path to a custom CA certificate bundle file (PEM format)")
 	rootCmd.Flags().StringVar(&cfg.TLSMinVer, "tls-min", "1.2",
 		"Enforce minimum TLS protocol version constraints (1.2, 1.3)")
+	rootCmd.Flags().BoolVarP(&cfg.FollowRedirects, "location", "L", false,
+		"Follow redirects. Limit the amount of redirects to follow by using the --max-redirs option.")
+	rootCmd.Flags().IntVar(&cfg.MaxRedirects, "max-redirs", 10,
+		"Limit the amount of redirects to follow. Default is 10")
+	rootCmd.Flags().BoolVarP(&cfg.FailFast, "fail", "f", false,
+		"Fail fast with no output on HTTP errors")
 
 	// Sub commands
 	rootCmd.AddCommand(NewVersionCommand())
@@ -154,6 +161,12 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 		return err
 	}
 
+	if cfg.Verbose {
+		req = req.WithContext(httptrace.WithClientTrace(req.Context(), transport.NewHTTPTrace(
+			cmd.ErrOrStderr(), cfg,
+		)))
+	}
+
 	for k, v := range cfg.Headers {
 		for _, val := range v {
 			req.Header.Add(k, val)
@@ -171,12 +184,17 @@ func ExecuteRequest(cmd *cobra.Command, cfg *config.RequestConfiguration) error 
 		return err
 	}
 
+	if cfg.FailFast && res.StatusCode >= 400 {
+		return fmt.Errorf("the server responded with an error status code: %d (omitting body output)", res.StatusCode)
+	}
+
 	defer res.Body.Close()
 
 	if cfg.Verbose {
-		fmt.Fprintf(cmd.ErrOrStderr(), "* Connection established. Status Protocol: %s\n", res.Proto)
+		fmt.Fprintln(cmd.ErrOrStderr(), "* Request completely sent off")
+		fmt.Fprintf(cmd.ErrOrStderr(), "< %s %d\n", res.Proto, res.StatusCode)
 		for k, v := range res.Header {
-			fmt.Fprintf(cmd.ErrOrStderr(), "< %s: %s\n", k, strings.Join(v, ", "))
+			fmt.Fprintf(cmd.ErrOrStderr(), "< %s: %s\n", strings.ToLower(k), strings.Join(v, ", "))
 		}
 	}
 

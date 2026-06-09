@@ -16,19 +16,22 @@ type AuditMetrics struct {
 
 // RequestConfiguration defines the immutable domain model for a network request.
 type RequestConfiguration struct {
-	Method         string
-	URL            string
-	Headers        http.Header
-	Data           string
-	ConnectTimeout time.Duration
-	MaxTimeout     time.Duration
-	Insecure       bool
-	Verbose        bool
-	Metrics        AuditMetrics
-	Concurrency    int
-	TotalRequests  int
-	CACertPath     string
-	TLSMinVer      string
+	Method          string
+	URL             string
+	Headers         http.Header
+	Data            string
+	ConnectTimeout  time.Duration
+	MaxTimeout      time.Duration
+	Insecure        bool
+	Verbose         bool
+	Metrics         AuditMetrics
+	Concurrency     int
+	TotalRequests   int
+	CACertPath      string
+	TLSMinVer       string
+	FollowRedirects bool
+	MaxRedirects    int
+	FailFast        bool
 }
 
 func NewDefaultConfig() *RequestConfiguration {

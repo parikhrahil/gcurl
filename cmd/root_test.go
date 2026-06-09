@@ -110,7 +110,7 @@ func TestExecuteRequest_SingleRequest_HappyPathWithPayload(t *testing.T) {
 	}
 
 	capturedDiagnostics := stderrBuf.String()
-	if !strings.Contains(capturedDiagnostics, "Connection established.") {
+	if !strings.Contains(capturedDiagnostics, "Request completely sent off") {
 		t.Errorf("Presentation Omission: Verbose network connection data missing from stderr logs")
 	}
 
